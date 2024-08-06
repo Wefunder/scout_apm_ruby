@@ -11,6 +11,10 @@ module ScoutApm
         :good_job
       end
 
+      def present?
+        defined?(::GoodJob::Job)
+      end
+
       def forking?
         false
       end
