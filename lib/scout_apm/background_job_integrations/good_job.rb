@@ -24,7 +24,6 @@ module ScoutApm
           around_perform do |job, block|
             # I have a sneaking suspicion there is a better way to handle Agent starting
             # Maybe hook into GoodJob lifecycle events?
-            ScoutApm::Agent.instance.start_background_worker unless ScoutApm::Agent.instance.background_worker_running?
             req = ScoutApm::RequestManager.lookup
             latency = Time.now - (job.scheduled_at || job.enqueued_at) rescue 0
             req.annotate_request(queue_latency: latency)
