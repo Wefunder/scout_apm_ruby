@@ -4,10 +4,6 @@ module ScoutApm
       UNKNOWN_QUEUE_PLACEHOLDER = 'default'.freeze
       attr_reader :logger
 
-      def initialize(logger)
-        @logger = logger
-      end
-
       def name
         :good_job
       end
