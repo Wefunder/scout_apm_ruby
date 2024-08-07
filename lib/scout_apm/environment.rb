@@ -148,6 +148,7 @@ module ScoutApm
 
     def background_job_integrations
       if Agent.instance.context.config.value("enable_background_jobs")
+        binding.b
         @background_job_integrations ||= BACKGROUND_JOB_INTEGRATIONS.select {|integration| integration.present?}
       else
         []

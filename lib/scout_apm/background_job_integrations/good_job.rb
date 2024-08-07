@@ -9,7 +9,7 @@ module ScoutApm
       end
 
       def present?
-        defined?(::GoodJob::Job)
+        defined?(::GoodJob::VERSION)
       end
 
       def forking?
@@ -17,30 +17,31 @@ module ScoutApm
       end
 
       def install
-        require 'good_job'
-        GoodJob::ActiveRecordParentClass.class_eval do
-          include ScoutApm::Tracer
+        ActiveSupport.on_load(:good_job_base_record) do
+          GoodJob::ActiveRecordParentClass.class_eval do
+            include ScoutApm::Tracer
 
-          around_perform do |job, block|
-            # I have a sneaking suspicion there is a better way to handle Agent starting
-            # Maybe hook into GoodJob lifecycle events?
-            req = ScoutApm::RequestManager.lookup
-            latency = Time.now - (job.scheduled_at || job.enqueued_at) rescue 0
-            req.annotate_request(queue_latency: latency)
+            around_perform do |job, block|
+              # I have a sneaking suspicion there is a better way to handle Agent starting
+              # Maybe hook into GoodJob lifecycle events?
+              req = ScoutApm::RequestManager.lookup
+              latency = Time.now - (job.scheduled_at || job.enqueued_at) rescue 0
+              req.annotate_request(queue_latency: latency)
 
-            begin
-              req.start_layer ScoutApm::Layer.new("Queue", job.queue_name.presence || UNKNOWN_QUEUE_PLACEHOLDER)
-              started_queue = true # Following Convention
-              req.start_layer ScoutApm::Layer.new("Job", job.class.name)
-              started_job = true # Following Convention
+              begin
+                req.start_layer ScoutApm::Layer.new("Queue", job.queue_name.presence || UNKNOWN_QUEUE_PLACEHOLDER)
+                started_queue = true # Following Convention
+                req.start_layer ScoutApm::Layer.new("Job", job.class.name)
+                started_job = true # Following Convention
 
-              block.call
-            rescue
-              req.error!
-              raise
-            ensure
-              req.stop_layer if started_job
-              req.stop_layer if started_queue
+                block.call
+              rescue
+                req.error!
+                raise
+              ensure
+                req.stop_layer if started_job
+                req.stop_layer if started_queue
+              end
             end
           end
         end
